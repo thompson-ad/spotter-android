@@ -1,6 +1,5 @@
 package dev.aaron.thompson.spotter
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,12 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.aaron.thompson.spotter.ui.theme.SpotterTheme
@@ -118,8 +117,7 @@ val lifts = listOf(
 
 fun fmt(d: Double): String? {
     return if (d == d.toLong().toDouble()) String.format("%d", d.toLong()) else String.format(
-        "%s",
-        d
+        "%s", d
     )
 }
 
@@ -132,8 +130,7 @@ class MainActivity : ComponentActivity() {
             SpotterTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
                     SpotrApp(groupedLifts = groupedLifts)
                 }
@@ -143,23 +140,27 @@ class MainActivity : ComponentActivity() {
 }
 
 @OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
 )
 @Composable
 fun SpotrApp(groupedLifts: Map<Char, List<Lift>>) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         "Recent Lifts",
-                        style = MaterialTheme.typography.headlineLarge
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                })
+                },
+                scrollBehavior = scrollBehavior
+            )
         },
         bottomBar = {
-            BottomAppBar() {
+            BottomAppBar {
                 Spacer(Modifier.weight(1f, true))
                 Box(
                     Modifier
@@ -175,45 +176,34 @@ fun SpotrApp(groupedLifts: Map<Char, List<Lift>>) {
                         containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
                         elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
                     ) {
-                        Icon(Icons.Filled.Add, "Localized description")
+                        Icon(Icons.Filled.Add, "Add new lift")
                     }
                 }
             }
         },
     ) { padding ->
-        if (groupedLifts != null) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(top = 16.dp),
-                contentPadding = PaddingValues(bottom = padding.calculateBottomPadding())
-            ) {
-                groupedLifts.forEach { (liftChar, liftsForChar) ->
-                    stickyHeader {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .padding(
-                                    start = 16.dp,
-                                    top = 2.dp,
-                                    end = 2.dp,
-                                    bottom = 2.dp
-                                )
-                        ) {
-                            Text(text = liftChar.toString())
+        Column(modifier = Modifier.padding(padding)) {
+            SearchRecentLiftsBar()
+            if (groupedLifts != null) {
+                LazyColumn {
+                    groupedLifts.forEach { (liftChar, liftsForChar) ->
+                        stickyHeader {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(
+                                        start = 16.dp, top = 2.dp, end = 2.dp, bottom = 2.dp
+                                    )
+                            ) {
+                                Text(text = liftChar.toString())
+                            }
                         }
-                    }
-                    items(liftsForChar) { lift ->
-                        val repText = if (lift.reps != 1) "reps" else "rep"
-                        ListItem(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            headlineText = {
+                        items(liftsForChar) { lift ->
+                            val repText = if (lift.reps != 1) "reps" else "rep"
+                            ListItem(modifier = Modifier.padding(vertical = 16.dp), headlineText = {
                                 Text(lift.movementName)
-                            },
-                            supportingText = { Text(lift.completed) },
-                            trailingContent = {
+                            }, supportingText = { Text(lift.completed) }, trailingContent = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
 
@@ -249,9 +239,9 @@ fun SpotrApp(groupedLifts: Map<Char, List<Lift>>) {
                                         color = MaterialTheme.colorScheme.primary
                                     ) {}
                                 }
-                            }
-                        )
-                        Divider()
+                            })
+                            Divider()
+                        }
                     }
                 }
             }
@@ -264,8 +254,7 @@ fun SpotrApp(groupedLifts: Map<Char, List<Lift>>) {
 fun DefaultPreview() {
     SpotterTheme {
         Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
         ) {
 
             SpotrApp(groupedLifts = groupedLifts)
